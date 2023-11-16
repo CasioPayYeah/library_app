@@ -1,17 +1,43 @@
 import "./BookList.css"
-import {useDispatch, useSelector} from "react-redux";
-import {deleteBook, toggleFavorite} from "../redux/Books/actionCreators.ts";
+import { useDispatch, useSelector } from "react-redux";
+import { deleteBook, selectBooks, toggleFavorite } from "../redux/Slices/bookSlice.ts";
 import { BsBookmarkStar, BsBookmarkStarFill } from "react-icons/bs";
-import { selectTitleFilter } from "../redux/Slices/FilterSlice.ts";
+import {selectAuthorFilter, selectOnlyFavorite, selectTitleFilter} from "../redux/Slices/filterSlice.ts";
 
 const BookList = () => {
-    const books = useSelector((state) => state.books);
+    const books = useSelector(selectBooks);
     const titleFilter = useSelector(selectTitleFilter)
+    const authorFilter = useSelector(selectAuthorFilter)
+    const favoriteFilter = useSelector(selectOnlyFavorite);
     const dispatch = useDispatch()
 
+    console.log(books)
+
     const filteredBooks = books.filter((book) => {
-        return book.title.toLowerCase().includes(titleFilter.toLowerCase())
+        const matchTitle = book.title.toLowerCase().includes(titleFilter.toLowerCase())
+        const matchAuthor = book.author.toLowerCase().includes(authorFilter.toLowerCase())
+        const matchFavorite = favoriteFilter ? book.isFavorite : true;
+
+        return matchTitle && matchAuthor && matchFavorite;
     })
+
+    const highlightMatch = (text, filter) => {
+        if (!filter) return text;
+
+        const regex = new RegExp(`(${filter})`, 'gi')
+
+        return text.split(regex).map((part, index) => {
+            if (part.toLowerCase() === filter.toLowerCase()) {
+                return (
+                    <span key={index} className="highlight">
+                        {part}
+                    </span>
+                )
+            }
+
+            return part;
+        });
+    }
 
     return (
         <div className="app-block book-list">
@@ -23,7 +49,11 @@ const BookList = () => {
                     {filteredBooks.map((book) => (
                         <li key={book.id}>
                             <div className="book-info">
-                                {book.title} by {book.author}
+                                {highlightMatch(book.title, titleFilter)}
+                                {' '} by {' '}
+                                <strong>
+                                    {highlightMatch(book.author, authorFilter)}
+                                </strong>
                             </div>
 
                             <div className="book-actions">
